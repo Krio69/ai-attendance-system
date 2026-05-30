@@ -2,6 +2,19 @@
 {# Only shows when session is ACTIVE #}
 
 {% if session.status == 'ACTIVE' %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div id="spoofToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
+        aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body" id="spoofToastBody">
+                Spoof attempt blocked.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 <div class="card mb-4" id="cameraCard">
     <div class="card-header">
         <h6><i class="bi bi-camera-video-fill"></i> Live Face Recognition</h6>
@@ -9,6 +22,9 @@
             <span id="camStatus" class="badge bg-secondary">Camera Off</span>
             <span id="recognitionCount" class="badge bg-dark" style="display:none;">
                 Recognized: <span id="recCount">0</span>
+            </span>
+            <span id="spoofCountBadge" class="badge bg-danger" style="display:none;">
+                Spoof Blocked: <span id="spoofCount">0</span>
             </span>
         </div>
     </div>
@@ -48,13 +64,25 @@
 <script>
     let attStream = null;
     let scanInterval = null;
-    const attVideo = document.getElementById('attendanceVideo');
+    const attVideo = document.getElementById('attendanceVideo'); 
     const attCanvas = document.getElementById('attendanceCanvas');
     const attCtx = attCanvas.getContext('2d');
     const camStatus = document.getElementById('camStatus');
     const recLog = document.getElementById('recognitionLog');
     const recCountSpan = document.getElementById('recCount');
     const recCountBadge = document.getElementById('recognitionCount');
+    const spoofCountSpan = document.getElementById('spoofCount');
+    const spoofCountBadge = document.getElementById('spoofCountBadge');
+    const spoofToastEl = document.getElementById('spoofToast');
+    const spoofToastBody = document.getElementById('spoofToastBody');
+    const spoofToast = spoofToastEl ? new bootstrap.Toast(spoofToastEl, { delay: 2500 }) : null;
+    let spoofTotal = 0;
+
+    function showSpoofToast(message) {
+        if (!spoofToast || !spoofToastBody) return;
+        spoofToastBody.textContent = message;
+        spoofToast.show();
+    }
 
     async function startAttendanceCam() {
         try {
@@ -129,7 +157,7 @@
                         <div class="alert alert-success py-1 px-2 mb-1 small">
                             <i class="bi bi-check-circle-fill"></i>
                             <strong>${r.roll_no}</strong> ${r.name}
-                            <span class="float-end text-muted">${time} | ${r.similarity}</span>
+                            <span class="float-end text-muted">${time} | sim ${r.similarity} | live ${r.liveness_score ?? '-'}</span>
                         </div>` + recLog.innerHTML;
 
                         // Update the student row in the table below
@@ -138,6 +166,21 @@
                         // Don't spam the log for already-marked students
                     }
                 }
+            }
+
+            if (data.spoof_rejected && data.spoof_rejected > 0) {
+                const time = new Date().toLocaleTimeString();
+                spoofTotal += data.spoof_rejected;
+                spoofCountSpan.textContent = spoofTotal;
+                spoofCountBadge.style.display = '';
+                showSpoofToast(`Spoof blocked: ${data.spoof_rejected} face(s) rejected by liveness check`);
+
+                recLog.innerHTML = `
+                <div class="alert alert-danger py-1 px-2 mb-1 small">
+                    <i class="bi bi-shield-exclamation"></i>
+                    <strong>Spoof blocked:</strong> ${data.spoof_rejected} face(s) rejected by liveness check
+                    <span class="float-end text-muted">${time}</span>
+                </div>` + recLog.innerHTML;
             }
 
             if (data.total_marked !== undefined) {

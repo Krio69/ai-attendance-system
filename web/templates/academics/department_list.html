@@ -6,7 +6,7 @@
     <a href="{% url 'department_create' %}" class="btn btn-primary btn-sm btn-icon"><i class="bi bi-plus-lg"></i> Add Department</a>
 </div>
 <div class="card"><div class="card-body p-0">
-<table class="table table-hover">
+<table class="table table-hover responsive-table">
 <thead><tr><th>Code</th><th>Name</th><th>HOD</th><th>Students</th><th>Teachers</th><th>Subjects</th><th>Actions</th></tr></thead>
 <tbody>
 {% for item in dept_data %}
