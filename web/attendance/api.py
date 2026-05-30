@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.conf import settings
 from .models import Session, Attendance
 
 logger = logging.getLogger(__name__)
@@ -66,14 +67,16 @@ def recognize_frame(request, session_id):
 
         # Filter gallery to only students in this session's class
         from accounts.models import CustomUser
-        class_students = set(
-            CustomUser.objects.filter(
-                role='student',
-                department=session.department,
-                semester=session.semester,
-                is_active=True,
-            ).values_list('id', flat=True)
+        class_student_qs = CustomUser.objects.filter(
+            role='student',
+            department=session.department,
+            semester=session.semester,
+            is_active=True,
         )
+        if session.batch_id:
+            class_student_qs = class_student_qs.filter(batch_id=session.batch_id)
+
+        class_students = set(class_student_qs.values_list('id', flat=True))
         session_gallery = {uid: data for uid, data in gallery.items() if uid in class_students}
 
         # Detect faces
@@ -87,7 +90,11 @@ def recognize_frame(request, session_id):
 
         for face in faces:
             emb = ai_service.get_embedding(face)
-            match = ai_service.recognize(emb, session_gallery, threshold=0.45)
+            match = ai_service.recognize(
+                emb,
+                session_gallery,
+                threshold=getattr(settings, 'RECOGNITION_THRESHOLD', 0.45),
+            )
 
             if match:
                 if match['user_id'] in already_marked:

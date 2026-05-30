@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from accounts.models import CustomUser
@@ -148,7 +149,11 @@ def enroll_process(request):
         gallery_check = {uid: data for uid, data in gallery.items() if uid != student.id}
 
         test_emb = embeddings[0]
-        dup_match = ai_service.recognize(test_emb, gallery_check, threshold=0.45)
+        dup_match = ai_service.recognize(
+            test_emb,
+            gallery_check,
+            threshold=getattr(settings, 'RECOGNITION_THRESHOLD', 0.45),
+        )
         if dup_match:
             return JsonResponse({
                 'error': f'This face matches existing student: '
@@ -164,7 +169,6 @@ def enroll_process(request):
         photo_path = ''
         if best_face_img is not None:
             import os
-            from django.conf import settings
             photo_dir = os.path.join(settings.MEDIA_ROOT, 'faces', student.roll_no)
             os.makedirs(photo_dir, exist_ok=True)
             photo_filename = f'{student.roll_no}_ref.jpg'

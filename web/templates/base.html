@@ -51,6 +51,8 @@
 
             {% if user.role == 'admin' %}
             <li class="sidebar-section">Management</li>
+                <li><a class="nav-link {% if 'batch' in request.path %}active{% endif %}"
+                    href="{% url 'batch_list' %}"><i class="bi bi-collection"></i> Batches</a></li>
             <li><a class="nav-link {% if 'department' in request.path %}active{% endif %}"
                     href="{% url 'department_list' %}"><i class="bi bi-building"></i> Departments</a></li>
             <li><a class="nav-link {% if 'teacher' in request.path and 'subject' not in request.path %}active{% endif %}"
@@ -146,6 +148,69 @@
                 }
             });
         });
+    </script>
+    <script>
+        // Mobile-only table enhancer: runs only on small screens and targets tables with
+        // the `responsive-table` class to avoid any desktop regressions.
+        (function() {
+            const mq = window.matchMedia('(max-width: 767px)');
+
+            function enhanceTables() {
+                if (!mq.matches) return; // do nothing on larger screens
+
+                // keys we want to keep inline on mobile
+                const inlineKeys = ['department','batch','semester','actions','face-enrolled','faceenrolled','code','present','late','absent','total','percentage','rate','credits'];
+                // keys for which we WANT to show the data-label on mobile (important numeric items)
+                const showLabelKeys = ['credits','percentage','present','total','rate','students','teachers'];
+
+                document.querySelectorAll('table.responsive-table').forEach(table => {
+                    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    // per-table inline keys (data-inline="name,username") — normalized
+                    const tableInline = (table.dataset.inline || '').split(',').map(s => s.trim().toLowerCase().replace(/\s+/g,'-')).filter(Boolean);
+
+                    const effectiveInline = new Set([...inlineKeys, ...tableInline]);
+
+                    // per-table primary column index (data-primary="1"). Defaults to 0.
+                    let primaryIndex = 0;
+                    if (table.dataset.primary) {
+                        const raw = table.dataset.primary.trim();
+                        if (/^\d+$/.test(raw)) {
+                            primaryIndex = parseInt(raw, 10);
+                        } else {
+                            // try to find header index by name
+                            const idx = headers.findIndex(h => h.toLowerCase().trim() === raw.toLowerCase().trim());
+                            if (idx >= 0) primaryIndex = idx;
+                        }
+                    }
+
+                    table.querySelectorAll('tbody tr').forEach(row => {
+                        row.querySelectorAll('td').forEach((td, i) => {
+                            const label = headers[i] || '';
+                            td.setAttribute('data-label', label);
+
+                            // normalized key for CSS/logic (lowercase, dash-separated)
+                            const key = label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+                            td.setAttribute('data-key', key);
+
+                            // don't change primary cell layout here
+                            if (i === primaryIndex) return;
+
+                            if (effectiveInline.has(key)) {
+                                td.classList.add('inline-field');
+                            }
+
+                            if (!showLabelKeys.includes(key)) {
+                                td.classList.add('no-label');
+                            }
+                        });
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', enhanceTables);
+            // Re-run when viewport crosses the threshold (e.g., rotate device)
+            mq.addEventListener && mq.addEventListener('change', (e) => { if (e.matches) enhanceTables(); });
+        })();
     </script>
     {% block extra_js %}{% endblock %}
 </body>

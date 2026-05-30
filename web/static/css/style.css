@@ -739,6 +739,29 @@ a:hover {
     font-size: 0.95rem;
 }
 
+/* Change Password page */
+.change-password-page {
+    margin-top: 0.25rem;
+}
+
+.change-password-card {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.change-password-card-body {
+    padding: 1.5rem;
+}
+
+.change-password-page .form-control,
+.change-password-page .form-select {
+    width: 100%;
+}
+
+.change-password-page .form-actions {
+    margin-top: 0.25rem;
+}
+
 /* ==============================================================
    RESPONSIVE
    ============================================================== */
@@ -845,5 +868,118 @@ a:hover {
     .btn-sm {
         padding: 0.25rem 0.5rem;
         font-size: 0.72rem;
+    }
+}
+
+
+/* Mobile stacked tables: apply ONLY to tables marked with .responsive-table */
+@media (max-width: 767px) {
+    table.responsive-table {
+        width: 100%;
+        border-collapse: separate;
+    }
+
+    table.responsive-table thead {
+        display: none;
+    }
+
+
+    table.responsive-table tbody tr {
+        display: block;
+        margin-bottom: 0.6rem;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius-sm);
+        box-shadow: var(--card-shadow);
+        padding: 0.45rem;
+    }
+
+    /* default: stacked fields */
+    table.responsive-table tbody td {
+        display: block;
+        padding: 0.5rem 0.6rem;
+        border: none;
+    }
+
+    /* cells explicitly marked inline will render inline next to the primary cell */
+    table.responsive-table tbody td.inline-field {
+        display: inline-block;
+        padding: 0.35rem 0.45rem;
+        vertical-align: middle;
+        margin-right: 0.4rem;
+    }
+
+    /* collapse <br> and show small inline for compact subject/teacher rows */
+    table.responsive-table tbody td br {
+        display: none;
+    }
+
+    table.responsive-table tbody td small {
+        display: inline;
+        margin-left: 0.35rem;
+        color: var(--text-secondary);
+        font-size: 0.88em;
+    }
+
+    table.responsive-table tbody td > * {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    table.responsive-table tbody td[data-label]::before {
+        content: attr(data-label) ": ";
+        display: inline-block;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-right: 0.35rem;
+        font-size: 0.78rem;
+    }
+
+    /* hide the auto-label for fields marked as no-label */
+    table.responsive-table tbody td.no-label::before {
+        display: none;
+    }
+
+    /* Compact primary row: if first cell contains name and avatar keep them inline */
+    /* primary cell and inline fields sit on the same line */
+    table.responsive-table tbody td:first-child {
+        display: inline-flex;
+        gap: 0.6rem;
+        align-items: center;
+        vertical-align: middle;
+        margin-right: 0.6rem;
+    }
+
+    .rt-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #fff;
+        background: var(--primary);
+        flex: 0 0 36px;
+    }
+
+    .rt-username {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        margin-top: 2px;
+    }
+
+    .rt-badges {
+        display: block;
+        margin-top: 6px;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+
+    /* Make action buttons touch-friendly but not full-width by default */
+    table.responsive-table tbody td .btn {
+        padding: 0.35rem 0.6rem;
+        font-size: 0.78rem;
     }
 }
