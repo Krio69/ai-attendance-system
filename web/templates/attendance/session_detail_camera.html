@@ -31,7 +31,7 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-8">
-                <div style="position:relative; background:#000; border-radius: var(--radius);
+                <div id="cameraPreviewWrap" style="position:relative; background:#000; border-radius: var(--radius);
                     overflow:hidden; aspect-ratio: 16/9;">
                     <video id="attendanceVideo" autoplay playsinline muted
                         style="width:100%; height:100%; object-fit:cover;"></video>
@@ -94,7 +94,11 @@
             camStatus.className = 'badge badge-active';
             document.getElementById('btnStartCam').disabled = true;
             document.getElementById('btnStopCam').disabled = false;
-            recLog.innerHTML = '<p class="text-success"><i class="bi bi-check-circle"></i> Camera started. Scanning...</p>';
+            recLog.innerHTML = `
+                <div class="alert alert-success py-1 px-2 mb-1 small d-flex align-items-center gap-2">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Camera started. Scanning...</span>
+                </div>`;
 
             // Start auto-scanning
             if (document.getElementById('autoScan').checked) {
@@ -154,10 +158,10 @@
                     const time = new Date().toLocaleTimeString();
                     if (r.status === 'MARKED') {
                         recLog.innerHTML = `
-                        <div class="alert alert-success py-1 px-2 mb-1 small">
+                        <div class="alert alert-success py-1 px-2 mb-1 small d-flex align-items-center gap-2">
                             <i class="bi bi-check-circle-fill"></i>
-                            <strong>${r.roll_no}</strong> ${r.name}
-                            <span class="float-end text-muted">${time} | sim ${r.similarity} | live ${r.liveness_score ?? '-'}</span>
+                            <span><strong>${r.roll_no}</strong> ${r.name}</span>
+                            <span class="ms-auto text-muted text-end">${time} | sim ${r.similarity} | live ${r.liveness_score ?? '-'}</span>
                         </div>` + recLog.innerHTML;
 
                         // Update the student row in the table below
@@ -176,10 +180,10 @@
                 showSpoofToast(`Spoof blocked: ${data.spoof_rejected} face(s) rejected by liveness check`);
 
                 recLog.innerHTML = `
-                <div class="alert alert-danger py-1 px-2 mb-1 small">
+                <div class="alert alert-danger py-1 px-2 mb-1 small d-flex align-items-center gap-2">
                     <i class="bi bi-shield-exclamation"></i>
-                    <strong>Spoof blocked:</strong> ${data.spoof_rejected} face(s) rejected by liveness check
-                    <span class="float-end text-muted">${time}</span>
+                    <span><strong>Spoof blocked:</strong> ${data.spoof_rejected} face(s) rejected by liveness check</span>
+                    <span class="ms-auto text-muted text-end">${time}</span>
                 </div>` + recLog.innerHTML;
             }
 

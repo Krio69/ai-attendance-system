@@ -34,3 +34,4 @@ web/staticfiles/
 models/*.pth
 models/*.dat
 models/*.pt
+models/*.onnx
