@@ -117,10 +117,28 @@ ENROLLMENT_DATA_DIR = PROJECT_ROOT / 'dataset' / 'enrollment'
 FACES_DIR = ENROLLMENT_DATA_DIR / 'faces_aligned'
 GALLERY_DIR = ENROLLMENT_DATA_DIR / 'gallery'
 
-RECOGNITION_THRESHOLD = 0.45
+RECOGNITION_THRESHOLD = 0.50
 INSIGHTFACE_MODEL = 'buffalo_l'
 DET_SIZE = (640, 640)
 DET_THRESH = 0.5
+
+# ============================================================== 
+# ANTI-SPOOF / LIVENESS SETTINGS
+# ============================================================== 
+ANTI_SPOOF_ENABLED = True
+ANTI_SPOOF_THRESHOLD = 0.0525
+ANTI_SPOOF_MODEL_PATH = PROJECT_ROOT / 'models' / 'best_model.onnx'
+ANTI_SPOOF_INPUT_SIZE = 128
+ANTI_SPOOF_LIVE_CLASS_INDEX = 0
+ANTI_SPOOF_USE_HEURISTIC_FALLBACK = True
+ANTI_SPOOF_UNCERTAIN_MARGIN = 0.15
+ANTI_SPOOF_DEBUG = False
+ANTI_SPOOF_MIN_FACE_SIZE = 96
+ANTI_SPOOF_CROP_MARGIN_RATIO = 0.12
+
+# MiniFASNet liveness threshold (used by ai_service.check_liveness)
+# 0.85 = conservative. Lower to 0.78 if real faces get rejected.
+LIVENESS_THRESHOLD = 0.85
 
 # ==============================================================
 # INTERNATIONALIZATION
@@ -164,6 +182,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # CSRF
 CSRF_COOKIE_HTTPONLY = False  # Needed for AJAX
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+ALLOWED_HOSTS = ["*"]
 
 # Security headers (enable in production)
 # SECURE_BROWSER_XSS_FILTER = True

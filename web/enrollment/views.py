@@ -118,6 +118,7 @@ def enroll_process(request):
                 continue
 
             face = faces[0]
+
             emb = ai_service.get_embedding(face)
             embeddings.append(emb)
             det_scores.append(float(face.det_score))
@@ -191,6 +192,8 @@ def enroll_process(request):
             }
         )
 
+        ai_service.refresh_gallery()
+
         return JsonResponse({
             'success': True,
             'message': f'Enrolled {student.full_name} ({student.roll_no})',
@@ -220,6 +223,9 @@ def enroll_delete(request, student_id):
 
     student = get_object_or_404(CustomUser, pk=student_id, role='student')
     deleted = FaceEmbedding.objects.filter(user=student).delete()
+
+    from ai_service import ai_service
+    ai_service.refresh_gallery()
 
     return JsonResponse({
         'success': True,

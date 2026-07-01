@@ -935,6 +935,12 @@ a:hover {
         font-size: 0.78rem;
     }
 
+    /* if a cell has an empty label/key, treat it as a helper cell and hide it on mobile */
+    table.responsive-table tbody td[data-label=""],
+    table.responsive-table tbody td[data-key=""] {
+        display: none;
+    }
+
     /* hide the auto-label for fields marked as no-label */
     table.responsive-table tbody td.no-label::before {
         display: none;

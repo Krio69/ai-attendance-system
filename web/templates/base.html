@@ -192,6 +192,11 @@
                             const key = label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
                             td.setAttribute('data-key', key);
 
+                            // Empty helper cells should not render as visible left-side labels on mobile.
+                            if (!label || !key) {
+                                td.classList.add('no-label');
+                            }
+
                             // don't change primary cell layout here
                             if (i === primaryIndex) return;
 
