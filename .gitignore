@@ -35,3 +35,5 @@ models/*.pth
 models/*.dat
 models/*.pt
 models/*.onnx
+
+test_data/

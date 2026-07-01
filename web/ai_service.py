@@ -12,6 +12,7 @@ import os
 import sys
 import numpy as np
 import threading
+
 import logging
 from django.conf import settings
 
@@ -90,33 +91,25 @@ class AIService:
             raise
 
     def _load_antispoofing(self):
-        """
-        Load MiniFASNet anti-spoofing models.
-
-        Fails gracefully: if the src files or model weights aren't present,
-        self._spoof_predictor stays None and check_liveness() will fail open.
-        """
         if not os.path.isdir(SPOOF_MODEL_DIR):
             logger.warning(
                 f"Anti-spoofing model dir not found: {SPOOF_MODEL_DIR}. "
-                "Running WITHOUT liveness detection. "
-                "See docstring for install instructions."
+                "Running WITHOUT liveness detection."
             )
             return
-
         try:
+            # Add antispoof dir to sys.path so relative imports inside
+            # anti_spoof_predict.py resolve correctly as absolute imports
+            if WEB_DIR not in sys.path:
+                sys.path.insert(0, WEB_DIR)
+
             from antispoof.anti_spoof_predict import AntiSpoofPredict
             from antispoof.generate_patches import CropImage
-
-            # device_id=0 → GPU if available, else falls back to CPU inside AntiSpoofPredict
             self._spoof_predictor = AntiSpoofPredict(device_id=0)
             self._spoof_cropper = CropImage()
             logger.info(f"Anti-spoofing models loaded from {SPOOF_MODEL_DIR}")
         except ImportError as e:
-            logger.warning(
-                f"Anti-spoofing import failed ({e}). "
-                "Install torch + copy src files from minivision-ai/Silent-Face-Anti-Spoofing."
-            )
+            logger.warning(f"Anti-spoofing import failed ({e}).")
         except Exception as e:
             logger.warning(f"Anti-spoofing setup error: {e}. Continuing without liveness check.")
 
