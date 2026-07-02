@@ -161,7 +161,7 @@
                 // keys we want to keep inline on mobile
                 const inlineKeys = ['department','batch','semester','actions','face-enrolled','faceenrolled','code','present','late','absent','total','percentage','rate','credits'];
                 // keys for which we WANT to show the data-label on mobile (important numeric items)
-                const showLabelKeys = ['credits','percentage','present','total','rate','students','teachers'];
+                const showLabelKeys = ['credits','percentage','present','total','rate','students','teachers','subject','subjects'];
 
                 document.querySelectorAll('table.responsive-table').forEach(table => {
                     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
