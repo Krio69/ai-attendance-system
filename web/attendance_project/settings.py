@@ -8,135 +8,141 @@ from pathlib import Path
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # C:/Final_Project
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # repo root
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production-xyz123')
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-this-in-production-xyz123")
 
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+# IMPORTANT: default False for production safety
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1"]
 
 # ==============================================================
 # INSTALLED APPS
 # ==============================================================
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 
     # Third party
-    'crispy_forms',
-    'crispy_bootstrap5',
+    "crispy_forms",
+    "crispy_bootstrap5",
 
     # Our apps
-    'accounts',
-    'academics',
-    'attendance',
-    'enrollment',
+    "accounts",
+    "academics",
+    "attendance",
+    "enrollment",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # ← Required for serving static assets on Vercel
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'attendance_project.security.SessionTimeoutMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "attendance_project.security.SessionTimeoutMiddleware",
 ]
 
-ROOT_URLCONF = 'attendance_project.urls'
+ROOT_URLCONF = "attendance_project.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'attendance_project.wsgi.application'
+WSGI_APPLICATION = "attendance_project.wsgi.application"
 
 # ==============================================================
-# DATABASE — Dynamic routing for Local vs Cloud Setup
+# DATABASE — Vercel/Cloud first, localhost fallback
 # ==============================================================
-if os.environ.get('DATABASE_URL'):
-    # Uses Cloud Database Connection String if running on Vercel
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
     DATABASES = {
-        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True,
+        )
     }
 else:
-    # Falls back to your local setup automatically
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'attendance_system',
-            'USER': 'postgres',
-            'PASSWORD': 'root123',
-            'HOST': 'localhost',
-            'PORT': '5432',
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "attendance_system",
+            "USER": "postgres",
+            "PASSWORD": "root123",
+            "HOST": "localhost",
+            "PORT": "5432",
         }
     }
 
 # ==============================================================
 # AUTH
 # ==============================================================
-AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTH_USER_MODEL = "accounts.CustomUser"
 
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/accounts/login/'
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 # ==============================================================
 # STATIC & MEDIA
 # ==============================================================
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# WhiteNoise storage engine to compress and cache static files safely
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Keep only if this folder exists in your repo; otherwise remove
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # ==============================================================
 # CRISPY FORMS
 # ==============================================================
-CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
-CRISPY_TEMPLATE_PACK = 'bootstrap5'
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 # ==============================================================
 # FACE RECOGNITION SETTINGS
 # ==============================================================
-ENROLLMENT_DATA_DIR = PROJECT_ROOT / 'dataset' / 'enrollment'
-FACES_DIR = ENROLLMENT_DATA_DIR / 'faces_aligned'
-GALLERY_DIR = ENROLLMENT_DATA_DIR / 'gallery'
+ENROLLMENT_DATA_DIR = PROJECT_ROOT / "dataset" / "enrollment"
+FACES_DIR = ENROLLMENT_DATA_DIR / "faces_aligned"
+GALLERY_DIR = ENROLLMENT_DATA_DIR / "gallery"
 
 RECOGNITION_THRESHOLD = 0.50
-INSIGHTFACE_MODEL = 'buffalo_l'
+INSIGHTFACE_MODEL = "buffalo_l"
 DET_SIZE = (640, 640)
 DET_THRESH = 0.5
 
-# ============================================================== 
+# ==============================================================
 # ANTI-SPOOF / LIVENESS SETTINGS
-# ============================================================== 
+# ==============================================================
 ANTI_SPOOF_ENABLED = True
 ANTI_SPOOF_THRESHOLD = 0.0525
-ANTI_SPOOF_MODEL_PATH = PROJECT_ROOT / 'models' / 'best_model.onnx'
+ANTI_SPOOF_MODEL_PATH = PROJECT_ROOT / "models" / "best_model.onnx"
 ANTI_SPOOF_INPUT_SIZE = 128
 ANTI_SPOOF_LIVE_CLASS_INDEX = 0
 ANTI_SPOOF_USE_HEURISTIC_FALLBACK = True
@@ -150,36 +156,44 @@ LIVENESS_THRESHOLD = 0.85
 # ==============================================================
 # INTERNATIONALIZATION
 # ==============================================================
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Kathmandu'
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "Asia/Kathmandu"
 USE_I18N = True
 USE_TZ = True
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ============================================================
 # ATTENDANCE NOTIFICATION SETTINGS
 # ============================================================
-ATTENDANCE_REQUEST_WINDOW = 48  
+ATTENDANCE_REQUEST_WINDOW = 48
 AUTO_SEND_ABSENCE_NOTIFICATIONS = True
 NOTIFICATION_RETENTION_DAYS = 30
 NOTIFICATIONS_PER_PAGE = 20
 
 # Session security
-SESSION_COOKIE_AGE = 1800  
-SESSION_SAVE_EVERY_REQUEST = True  
+SESSION_COOKIE_AGE = 1800
+SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-     'OPTIONS': {'min_length': 4}},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 4},
+    },
 ]
 
 # CSRF
-CSRF_COOKIE_HTTPONLY = False  
+CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000', 
-    'http://127.0.0.1:8000',
-    'https://*.vercel.app'
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://*.vercel.app",
 ]
+
+# Optional security hardening when DEBUG=False
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
