@@ -305,6 +305,19 @@ class AttendanceFlowGuardTests(TestCase):
             status='ACTIVE',
         )
 
+        self.attendance = Attendance.objects.create(
+            session=self.session,
+            student=self.allowed_student,
+            status=Attendance.Status.ABSENT,
+        )
+        self.pending_request = AttendanceCorrectionRequest.objects.create(
+            attendance=self.attendance,
+            student=self.allowed_student,
+            teacher=self.teacher,
+            reason='Marked absent by mistake',
+            status=AttendanceCorrectionRequest.Status.PENDING,
+        )
+
     def test_mark_manual_blocks_student_outside_session_batch(self):
         self.client.login(username='teacher_guard', password='testpass123')
 
@@ -341,6 +354,19 @@ class AttendanceFlowGuardTests(TestCase):
         })
 
         self.assertEqual(response.status_code, 403)
+
+    def test_teacher_can_view_pending_correction_requests(self):
+        self.client.login(username='teacher_guard', password='testpass123')
+
+        response = self.client.get(reverse('get_pending_correction_requests'))
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(payload['success'])
+        self.assertEqual(payload['count'], 1)
+        self.assertEqual(payload['requests'][0]['id'], self.pending_request.id)
+        self.assertIn('requested_window_remaining', payload['requests'][0])
+        self.assertGreaterEqual(payload['requests'][0]['requested_window_remaining'], 0)
 
     def test_teacher_attendance_summary_limited_to_assigned_subjects(self):
         other_subject = Subject.objects.create(
@@ -380,7 +406,7 @@ class AttendanceFlowGuardTests(TestCase):
             total_absent=0,
             total_late=0,
         )
-
+ 
         self.client.login(username='teacher_guard', password='testpass123')
         response = self.client.get(reverse('export_report_csv'), {
             'type': 'attendance',
@@ -407,6 +433,13 @@ class HodDepartmentBoundaryTests(TestCase):
             role='hod',
             department=self.dept_a,
             full_name='HOD A',
+        )
+
+        self.admin = User.objects.create_user(
+            username='admin_a',
+            password='testpass123',
+            role='admin',
+            full_name='Admin A',
         )
 
         self.batch_a = Batch.objects.create(department=self.dept_a, year=2026, code='26', is_active=True)
@@ -505,6 +538,23 @@ class HodDepartmentBoundaryTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Access denied for other department session')
+
+    def test_admin_can_view_other_department_session_detail(self):
+        self.client.login(username='admin_a', password='testpass123')
+
+        response = self.client.get(reverse('session_detail', args=[self.session_b.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.subject_b.code)
+
+    def test_admin_can_export_session_csv(self):
+        self.client.login(username='admin_a', password='testpass123')
+
+        response = self.client.get(reverse('export_session_csv', args=[self.session_b.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'text/csv')
+        self.assertIn(self.subject_b.code, response['Content-Disposition'])
 
     def test_hod_pending_requests_are_department_scoped(self):
         self.client.login(username='hod_a', password='testpass123')

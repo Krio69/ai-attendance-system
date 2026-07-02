@@ -1,4 +1,5 @@
 import csv
+from functools import wraps
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -27,6 +28,18 @@ def teacher_required(view_func):
             messages.error(request, 'Teacher access required.')
             return redirect('dashboard')
         return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def teacher_hod_admin_required(view_func):
+    """Decorator: teacher, HOD, or admin only."""
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated or request.user.role not in ('teacher', 'hod', 'admin'):
+            messages.error(request, 'Teacher access required.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+
     return wrapper
 
 
@@ -146,11 +159,11 @@ def start_session(request, subject_id):
 # ==============================================================
 
 @login_required
-@teacher_required
+@teacher_hod_admin_required
 def session_detail(request, session_id):
     session = get_object_or_404(Session, pk=session_id)
 
-    if session.teacher != request.user and request.user.role != 'hod':
+    if session.teacher != request.user and request.user.role not in ('hod', 'admin'):
         messages.error(request, 'Not your session.')
         return redirect('teacher_subjects')
 
@@ -317,7 +330,7 @@ def session_history(request):
 # ==============================================================
 
 @login_required
-@teacher_required
+@teacher_hod_admin_required
 def export_session_csv(request, session_id):
     session = get_object_or_404(Session, pk=session_id)
 
@@ -834,8 +847,15 @@ def get_pending_correction_requests(request):
                 'reason': req.reason,
                 'created_at': req.created_at.isoformat(),
                 'requested_window_remaining': (
-                    (req.attendance.session.date + timedelta(hours=getattr(settings, 'ATTENDANCE_REQUEST_WINDOW', 48))
-                     - timezone.now()).total_seconds() / 3600
+                    (
+                        timezone.make_aware(
+                            datetime.combine(
+                                req.attendance.session.date,
+                                req.attendance.session.end_time or time(23, 59, 59)
+                            )
+                        ) + timedelta(hours=getattr(settings, 'ATTENDANCE_REQUEST_WINDOW', 48))
+                        - timezone.now()
+                    ).total_seconds() / 3600
                 ),
             }
             for req in requests
