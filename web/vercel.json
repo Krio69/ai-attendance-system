@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "buildCommand": "cd web && python manage.py collectstatic --noinput",
   "builds": [
     {
       "src": "web/attendance_project/wsgi.py",
@@ -8,13 +9,6 @@
     }
   ],
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "web/attendance_project/wsgi.py"
-    }
+    { "src": "/(.*)", "dest": "web/attendance_project/wsgi.py" }
   ]
 }
