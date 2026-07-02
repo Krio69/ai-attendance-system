@@ -97,7 +97,10 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
+
+# Safe for Vercel serverless (prevents 500 from missing manifest entries)
+WHITENOISE_MANIFEST_STRICT = False
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
