@@ -1,6 +1,8 @@
 [project]
-name = "app"
-version = "0.1.0"
+name = "ai-attendance-system"
+version = "0.1.2"
+description = "Web dashboard clean build"
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "asgiref==3.8.1",
@@ -25,3 +27,7 @@ dependencies = [
     "urllib3==2.2.3",
     "whitenoise==6.7.0",
 ]
+
+[tool.uv]
+# This forces uv to completely substitute the broken C-build package with a no-op fallback
+no-binary = ["backports-zoneinfo"]
