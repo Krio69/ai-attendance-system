@@ -34,6 +34,13 @@
             </div>
             <div class="card-body">
                 <table class="table table-borderless responsive-table">
+                    <thead class="visually-hidden">
+                        <tr>
+                            <th scope="col"></th>
+                            <th scope="col">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     <tr>
                         <td class="text-muted" style="width: 140px;">Username</td>
                         <td><code>{{ user.username }}</code></td>
@@ -76,6 +83,7 @@
                         <td class="text-muted">Joined</td>
                         <td>{{ user.date_joined|date:"d M Y, H:i" }}</td>
                     </tr>
+                    </tbody>
                 </table>
 
                 <a href="{% url 'change_password' %}" class="btn btn-outline-secondary btn-sm btn-icon">

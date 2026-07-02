@@ -696,11 +696,12 @@ a:hover {
    LOGIN PAGE
    ============================================================== */
 .login-page {
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #1a1d23 0%, #2d3139 100%);
+    padding: 16px;
 }
 
 .login-card {
