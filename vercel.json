@@ -1,0 +1,14 @@
+{
+  "version": 2,
+  "buildCommand": "cd web && python manage.py collectstatic --noinput",
+  "builds": [
+    {
+      "src": "web/attendance_project/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "web/attendance_project/wsgi.py" }
+  ]
+}
