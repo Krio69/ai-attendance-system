@@ -1,19 +1,14 @@
-"""
-WSGI config for attendance_project project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
-"""
-
 import os
+import sys
+from pathlib import Path
+
+# Ensure /var/task/web is on Python path in Vercel
+CURRENT_DIR = Path(__file__).resolve().parent          # .../web/attendance_project
+WEB_DIR = CURRENT_DIR.parent                           # .../web
+if str(WEB_DIR) not in sys.path:
+    sys.path.insert(0, str(WEB_DIR))
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "attendance_project.settings")
 
 from django.core.wsgi import get_wsgi_application
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'attendance_project.settings')
-
 application = get_wsgi_application()
-
-# This is required by Vercel to pick up the WSGI callable application handle
-app = application
