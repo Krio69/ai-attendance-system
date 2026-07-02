@@ -20,9 +20,6 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1"]
 
-# ==============================================================
-# INSTALLED APPS
-# ==============================================================
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -70,9 +67,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "attendance_project.wsgi.application"
 
-# ==============================================================
-# DATABASE
-# ==============================================================
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
     DATABASES = {
@@ -94,36 +88,23 @@ else:
         }
     }
 
-# ==============================================================
-# AUTH
-# ==============================================================
 AUTH_USER_MODEL = "accounts.CustomUser"
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
 
-# ==============================================================
-# STATIC & MEDIA
-# ==============================================================
+# Static/Media
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-
-# FIX: avoid 500 when manifest entry is missing on serverless
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# ==============================================================
-# CRISPY FORMS
-# ==============================================================
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-# ==============================================================
-# FACE RECOGNITION SETTINGS
-# ==============================================================
 ENROLLMENT_DATA_DIR = PROJECT_ROOT / "dataset" / "enrollment"
 FACES_DIR = ENROLLMENT_DATA_DIR / "faces_aligned"
 GALLERY_DIR = ENROLLMENT_DATA_DIR / "gallery"
@@ -133,9 +114,6 @@ INSIGHTFACE_MODEL = "buffalo_l"
 DET_SIZE = (640, 640)
 DET_THRESH = 0.5
 
-# ==============================================================
-# ANTI-SPOOF / LIVENESS SETTINGS
-# ==============================================================
 ANTI_SPOOF_ENABLED = True
 ANTI_SPOOF_THRESHOLD = 0.0525
 ANTI_SPOOF_MODEL_PATH = PROJECT_ROOT / "models" / "best_model.onnx"
@@ -148,29 +126,21 @@ ANTI_SPOOF_MIN_FACE_SIZE = 96
 ANTI_SPOOF_CROP_MARGIN_RATIO = 0.12
 LIVENESS_THRESHOLD = 0.85
 
-# ==============================================================
-# INTERNATIONALIZATION
-# ==============================================================
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kathmandu"
 USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# ============================================================
-# ATTENDANCE NOTIFICATION SETTINGS
-# ============================================================
 ATTENDANCE_REQUEST_WINDOW = 48
 AUTO_SEND_ABSENCE_NOTIFICATIONS = True
 NOTIFICATION_RETENTION_DAYS = 30
 NOTIFICATIONS_PER_PAGE = 20
 
-# Session security
 SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -178,7 +148,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# CSRF
 CSRF_COOKIE_HTTPONLY = False
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
