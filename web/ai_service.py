@@ -283,11 +283,36 @@ class AIService:
 
         try:
             from antispoof.utility import parse_model_name
+            anti_spoof_input_size = int(getattr(settings, 'ANTI_SPOOF_INPUT_SIZE', 128))
+            min_face_size = int(
+                getattr(
+                    settings,
+                    'ANTI_SPOOF_MIN_FACE_SIZE',
+                    max(64, int(anti_spoof_input_size * 0.75)),
+                )
+            )
 
             # InsightFace bbox is [x1, y1, x2, y2] (floats).
             # MiniFASNet CropImage expects [x, y, w, h] (ints).
             x1, y1, x2, y2 = face.bbox.astype(int)
-            bbox_xywh = [x1, y1, x2 - x1, y2 - y1]
+            face_w = x2 - x1
+            face_h = y2 - y1
+
+            if face_w <= 0 or face_h <= 0:
+                logger.debug("Liveness rejected invalid face bbox: %s", [x1, y1, x2, y2])
+                return False, 0.0
+
+            if min(face_w, face_h) < min_face_size:
+                logger.debug(
+                    "Liveness rejected small face crop: bbox=%s size=%sx%s min=%s",
+                    [x1, y1, x2, y2],
+                    face_w,
+                    face_h,
+                    min_face_size,
+                )
+                return False, 0.0
+
+            bbox_xywh = [x1, y1, face_w, face_h]
 
             # Accumulate softmax outputs across both bundled models.
             # Shape: (1, 3) — classes are [spoof_type_A, real, spoof_type_B]

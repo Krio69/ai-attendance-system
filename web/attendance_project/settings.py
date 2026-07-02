@@ -10,7 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # C:/Final_Project
 
 SECRET_KEY = 'django-insecure-change-this-in-production-xyz123'
 
-DEBUG = True
+DEBUG = True # Set to False in production
 
 ALLOWED_HOSTS = ['*']
 
