@@ -1,18 +1,20 @@
 """
 Django settings for Face Recognition Attendance System.
+Optimized for local development and Vercel deployment.
 """
 
 import os
 from pathlib import Path
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # C:/Final_Project
 
-SECRET_KEY = 'django-insecure-change-this-in-production-xyz123'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production-xyz123')
 
-DEBUG = True # Set to False in production
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1', '*']
 
 # ==============================================================
 # INSTALLED APPS
@@ -38,6 +40,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # ← Required for serving static assets on Vercel
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -68,18 +71,25 @@ TEMPLATES = [
 WSGI_APPLICATION = 'attendance_project.wsgi.application'
 
 # ==============================================================
-# DATABASE — Same PostgreSQL you already set up
+# DATABASE — Dynamic routing for Local vs Cloud Setup
 # ==============================================================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'attendance_system',
-        'USER': 'attendance_admin',
-        'PASSWORD': 'root',     # ← CHANGE THIS
-        'HOST': 'localhost',
-        'PORT': '5433',
+if os.environ.get('DATABASE_URL'):
+    # Uses Cloud Database Connection String if running on Vercel
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600, ssl_require=True)
     }
-}
+else:
+    # Falls back to your local setup automatically
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'attendance_system',
+            'USER': 'postgres',
+            'PASSWORD': 'root123',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
 
 # ==============================================================
 # AUTH
@@ -90,16 +100,15 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-]
-
 # ==============================================================
 # STATIC & MEDIA
 # ==============================================================
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# WhiteNoise storage engine to compress and cache static files safely
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -136,8 +145,6 @@ ANTI_SPOOF_DEBUG = False
 ANTI_SPOOF_MIN_FACE_SIZE = 96
 ANTI_SPOOF_CROP_MARGIN_RATIO = 0.12
 
-# MiniFASNet liveness threshold (used by ai_service.check_liveness)
-# 0.85 = conservative. Lower to 0.78 if real faces get rejected.
 LIVENESS_THRESHOLD = 0.85
 
 # ==============================================================
@@ -150,44 +157,29 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 # ============================================================
 # ATTENDANCE NOTIFICATION SETTINGS
 # ============================================================
-
-# Request window: hours after session end during which student can request correction
-ATTENDANCE_REQUEST_WINDOW = 48  # 48 hours
-
-# Automatically send absence notifications after session ends
+ATTENDANCE_REQUEST_WINDOW = 48  
 AUTO_SEND_ABSENCE_NOTIFICATIONS = True
-
-# Notification retention (days) - after which old notifications are deleted
 NOTIFICATION_RETENTION_DAYS = 30
-
-# Pagination
 NOTIFICATIONS_PER_PAGE = 20
 
-
 # Session security
-SESSION_COOKIE_AGE = 1800  # 30 minutes
-SESSION_SAVE_EVERY_REQUEST = True  # Reset timer on each request
+SESSION_COOKIE_AGE = 1800  
+SESSION_SAVE_EVERY_REQUEST = True  
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Password validation (stronger)
+# Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
      'OPTIONS': {'min_length': 4}},
 ]
 
 # CSRF
-CSRF_COOKIE_HTTPONLY = False  # Needed for AJAX
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
-ALLOWED_HOSTS = ["*"]
-
-# Security headers (enable in production)
-# SECURE_BROWSER_XSS_FILTER = True
-# SECURE_CONTENT_TYPE_NOSNIFF = True
-# X_FRAME_OPTIONS = 'DENY'
-
-# Login attempt limiting (add django-axes if you want)
-# pip install django-axes
+CSRF_COOKIE_HTTPONLY = False  
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000', 
+    'http://127.0.0.1:8000',
+    'https://*.vercel.app'
+]

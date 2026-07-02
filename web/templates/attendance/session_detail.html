@@ -1,75 +1,343 @@
-{% extends "base.html" %}
-{% block title %}Session - {{ session.subject.code }}{% endblock %}
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Live Session - {{ session.subject.name }} - AI-ATTEND{% endblock %}
+
 {% block content %}
-<div class="page-header">
-    <div>
-        <h4>{{ session.subject.name }}
-            {% if session.status == 'ACTIVE' %}<span class="badge badge-active ms-2"><span class="session-active-pulse"></span> LIVE</span>
-            {% elif session.status == 'COMPLETED' %}<span class="badge badge-completed ms-2">Completed</span>
-            {% else %}<span class="badge badge-cancelled ms-2">Cancelled</span>{% endif %}
-        </h4>
-        <small class="text-muted">{{ session.date|date:"l, d M Y" }} | {{ session.start_time|time:"H:i" }}{% if session.end_time %} - {{ session.end_time|time:"H:i" }}{% endif %}</small>
+<div class="container-fluid py-3 px-2 px-md-4">
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0 bg-light">
+                <div class="card-body p-3 p-md-4">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                        <div>
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <span class="badge bg-primary">Batch: {{ session.batch.name|default:"N/A" }}</span>
+                                <span class="badge bg-secondary">Semester: {{ session.semester }}</span>
+                                <span id="session-status-badge" class="badge {% if session.status == 'ACTIVE' %}bg-success animate-pulse{% else %}bg-secondary{% endif %}">
+                                    {{ session.status }}
+                                </span>
+                            </div>
+                            <h2 class="h4 mb-1 fw-bold text-dark">{{ session.subject.name }}</h2>
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-person me-1"></i> Teacher: {{ session.teacher.full_name }} | 
+                                <i class="bi bi-clock me-1"></i> {{ session.start_time|time:"H:i" }} - {{ session.end_time|time:"H:i" }}
+                            </p>
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2 w-100 w-md-auto">
+                            {% if session.status == 'ACTIVE' %}
+                            <button id="start-webcam-btn" class="btn btn-dark flex-grow-1 flex-md-grow-0 px-3 d-flex align-items-center justify-content-center gap-2" style="min-height: 48px;">
+                                <i class="bi bi-camera-video-fill"></i> Initialize Camera
+                            </button>
+                            <a href="{% url 'end_session' session.id %}" class="btn btn-danger flex-grow-1 flex-md-grow-0 px-3 d-flex align-items-center justify-content-center gap-2" onclick="return confirm('Are you sure you want to end this session? Remaining students will be marked ABSENT.')" style="min-height: 48px;">
+                                <i class="bi bi-stop-circle-fill"></i> End Session
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'export_session_csv' session.id %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0 px-3 d-flex align-items-center justify-content-center gap-2" style="min-height: 48px;">
+                                <i class="bi bi-download"></i> Export CSV
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="d-flex gap-2">
-        {% if session.status == 'ACTIVE' %}
-        <form method="post" action="{% url 'end_session' session.id %}" onsubmit="return confirm('End session? Remaining students will be marked ABSENT.');">
-            {% csrf_token %}<button type="submit" class="btn btn-danger btn-sm btn-icon"><i class="bi bi-stop-circle"></i> End Session</button>
-        </form>
-        {% endif %}
-        <a href="{% url 'export_session_csv' session.id %}" class="btn btn-outline-secondary btn-sm btn-icon"><i class="bi bi-download"></i> CSV</a>
-    </div>
-</div>
-<div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="stat-card stat-success"><div class="card-body d-flex align-items-center gap-3">
-        <div class="stat-icon"><i class="bi bi-check-circle"></i></div><div><div class="stat-label">Present</div><div class="stat-value">{{ present_count }}</div></div>
-    </div></div></div>
-    <div class="col-md-3"><div class="stat-card stat-warning"><div class="card-body d-flex align-items-center gap-3">
-        <div class="stat-icon"><i class="bi bi-clock"></i></div><div><div class="stat-label">Late</div><div class="stat-value">{{ late_count }}</div></div>
-    </div></div></div>
-    <div class="col-md-3"><div class="stat-card stat-danger"><div class="card-body d-flex align-items-center gap-3">
-        <div class="stat-icon"><i class="bi bi-x-circle"></i></div><div><div class="stat-label">Absent</div><div class="stat-value">{{ absent_count }}</div></div>
-    </div></div></div>
-    <div class="col-md-3"><div class="stat-card stat-primary"><div class="card-body d-flex align-items-center gap-3">
-        <div class="stat-icon"><i class="bi bi-people"></i></div><div><div class="stat-label">Total</div><div class="stat-value">{{ total_count }}</div></div>
-    </div></div></div>
-</div>
 
-{% include "attendance/session_detail_camera.html" %}
-
-<div class="card">
-    <div class="card-header">
-        <h6><i class="bi bi-list-check"></i> Attendance Roll</h6>
-        {% if session.status == 'ACTIVE' %}<small class="text-muted">Click buttons to mark manually</small>{% endif %}
+    <div class="row g-2 text-center mb-4" id="stats-summary-counters">
+        <div class="col-4 col-md-3">
+            <div class="p-2 border rounded shadow-sm bg-white">
+                <small class="text-muted d-block text-uppercase font-monospace tracking-tight text-truncate" style="font-size: 0.65rem;">Present</small>
+                <span class="h4 fw-bold text-success mb-0" id="stat-present">{{ session.total_present }}</span>
+            </div>
+        </div>
+        <div class="col-4 col-md-3">
+            <div class="p-2 border rounded shadow-sm bg-white">
+                <small class="text-muted d-block text-uppercase font-monospace tracking-tight text-truncate" style="font-size: 0.65rem;">Late</small>
+                <span class="h4 fw-bold text-warning mb-0" id="stat-late">{{ session.total_late }}</span>
+            </div>
+        </div>
+        <div class="col-4 col-md-3">
+            <div class="p-2 border rounded shadow-sm bg-white">
+                <small class="text-muted d-block text-uppercase font-monospace tracking-tight text-truncate" style="font-size: 0.65rem;">Absent</small>
+                <span class="h4 fw-bold text-danger mb-0" id="stat-absent">{{ session.total_absent }}</span>
+            </div>
+        </div>
+        <div class="col-12 col-md-3 mt-2 mt-md-0">
+            <div class="p-2 border rounded shadow-sm bg-dark text-white">
+                <small class="text-muted d-block text-uppercase font-monospace tracking-tight text-truncate" style="font-size: 0.65rem; color: #a0a0a0 !important;">Spoofs Blocked</small>
+                <span class="h4 fw-bold text-warning mb-0" id="stat-spoofs">0</span>
+            </div>
+        </div>
     </div>
-    <div class="card-body p-0">
-        <table class="table table-hover responsive-table">
-            <thead><tr><th style="width:50px">#</th><th>Roll No</th><th>Name</th><th>Status</th><th>Time</th><th>Confidence</th><th>Method</th>{% if session.status == 'ACTIVE' %}<th style="width:180px">Actions</th>{% endif %}</tr></thead>
-            <tbody>
-                {% for item in student_data %}
-                <tr>
-                    <td class="text-muted">{{ forloop.counter }}</td>
-                    <td><strong>{{ item.student.roll_no }}</strong></td>
-                    <td>{{ item.student.full_name }}</td>
-                    <td>{% if item.status == 'PRESENT' %}<span class="badge badge-present"><i class="bi bi-check-circle"></i> Present</span>
-                        {% elif item.status == 'LATE' %}<span class="badge badge-late"><i class="bi bi-clock"></i> Late</span>
-                        {% elif item.status == 'ABSENT' %}<span class="badge badge-absent"><i class="bi bi-x-circle"></i> Absent</span>
-                        {% else %}<span class="badge bg-light text-secondary">Not Marked</span>{% endif %}</td>
-                    <td>{% if item.time_marked %}{{ item.time_marked|time:"H:i:s" }}{% else %}-{% endif %}</td>
-                    <td>{% if item.confidence %}{{ item.confidence|floatformat:3 }}{% else %}-{% endif %}</td>
-                    <td>{% if item.marked_by == 'auto' %}<small class="text-info"><i class="bi bi-camera-video"></i> Auto</small>
-                        {% elif item.marked_by == 'manual' %}<small class="text-secondary"><i class="bi bi-hand-index"></i> Manual</small>
-                        {% else %}-{% endif %}</td>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-6 col-xl-5">
+            <div class="card shadow-sm border-0 sticky-lg-top" style="top: 24px; z-index: 4;">
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 d-flex align-items-center gap-2 small" style="font-size: 0.95rem;">
+                        <i class="bi bi-cpu text-danger animate-pulse" id="processing-icon" style="display:none;"></i>
+                        AI Detection Feed Pipeline
+                    </h5>
+                    <span class="badge bg-outline-light border text-uppercase" id="stream-status-badge" style="font-size: 0.7rem;">Offline</span>
+                </div>
+                
+                <div class="card-body bg-black p-1 position-relative d-flex align-items-center justify-content-center overflow-hidden rounded-bottom" style="min-height: 240px; max-height: 480px; aspect-ratio: 4/3;">
                     {% if session.status == 'ACTIVE' %}
-                    <td><div class="d-flex gap-1">
-                        <a href="{% url 'mark_manual' session.id item.student.id 'present' %}" class="btn btn-sm {% if item.status == 'PRESENT' %}btn-success{% else %}btn-outline-success{% endif %}"><i class="bi bi-check"></i></a>
-                        <a href="{% url 'mark_manual' session.id item.student.id 'late' %}" class="btn btn-sm {% if item.status == 'LATE' %}btn-warning{% else %}btn-outline-warning{% endif %}"><i class="bi bi-clock"></i></a>
-                        <a href="{% url 'mark_manual' session.id item.student.id 'absent' %}" class="btn btn-sm {% if item.status == 'ABSENT' %}btn-danger{% else %}btn-outline-danger{% endif %}"><i class="bi bi-x"></i></a>
-                    </div></td>
+                    <div class="w-100 h-100 position-relative d-flex align-items-center justify-content-center">
+                        <video id="video-feed" autoplay playsinline muted class="w-100 h-auto bg-dark rounded" style="max-width: 100%; object-fit: cover; aspect-ratio: 4/3;"></video>
+                        <canvas id="canvas-overlay" class="position-absolute top-50 start-50 translate-middle w-100 h-auto" style="max-width: 100%; object-fit: cover; aspect-ratio: 4/3; pointer-events: none; z-index: 5;"></canvas>
+                    </div>
+                    <div class="position-absolute bottom-0 start-50 translate-middle-x w-100 px-3 pb-3" style="z-index: 10;">
+                        <div id="toast-liveness-alert" class="alert alert-danger shadow border-0 py-2 mb-0 d-none text-center">
+                            <i class="bi bi-shield-lock-fill me-1"></i> <span class="small fw-bold">Liveness Verification Failed (Spoof Blocked)</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted p-4">
+                        <i class="bi bi-camera-video-off display-4 d-block mb-2"></i>
+                        <span class="small">This attendance tracking session has been finalized.</span>
+                    </div>
                     {% endif %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6 col-xl-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <h5 class="card-title mb-0 fw-bold text-secondary text-truncate" style="font-size: 1rem;">Roster Ledger & Logs</h5>
+                    <div class="position-relative w-100 w-sm-auto mt-2 mt-sm-0">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" style="font-size: 0.85rem;"></i>
+                        <input type="text" id="roster-search-field" class="form-control form-control-sm ps-4" placeholder="Filter student record..." style="min-height: 36px;">
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="max-height: 600px; overflow-y: auto; -webkit-overflow-scrolling: touch;">
+                        <table class="table table-hover align-middle mb-0 text-nowrap">
+                            <thead class="table-light sticky-top" style="z-index: 2; top: -1px;">
+                                <tr>
+                                    <th class="ps-3 py-3" style="font-size: 0.75rem; width: 25%;">Roll Number</th>
+                                    <th class="py-3" style="font-size: 0.75rem; width: 35%;">Full Name</th>
+                                    <th class="py-3" style="font-size: 0.75rem; width: 20%;">Status</th>
+                                    <th class="pe-3 py-3 text-end" style="font-size: 0.75rem; width: 20%;">Override Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-roster-rows">
+                                {% for att in attendance_records %}
+                                <tr id="row-student-{{ att.student.id }}" class="student-record-row-item">
+                                    <td class="ps-3 font-monospace small align-middle target-roll-node">{{ att.student.roll_no }}</td>
+                                    <td class="fw-semibold small align-middle text-truncate target-name-node" style="max-width: 150px;">{{ att.student.full_name }}</td>
+                                    <td class="align-middle" id="badge-container-{{ att.student.id }}">
+                                        {% if att.status == 'PRESENT' %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small rounded">PRESENT</span>
+                                        {% elif att.status == 'LATE' %}
+                                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 small rounded">LATE</span>
+                                        {% else %}
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small rounded">ABSENT</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-3 align-middle text-end">
+                                        {% if session.status == 'ACTIVE' %}
+                                        <div class="btn-group shadow-sm btn-group-sm" role="group">
+                                            <button type="button" onclick="executeManualMark('{{ session.id }}', '{{ att.student.id }}', 'PRESENT')" class="btn btn-outline-success d-inline-flex align-items-center justify-content-center" style="min-width: 38px; min-height: 38px;" title="Present Override">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            <button type="button" onclick="executeManualMark('{{ session.id }}', '{{ att.student.id }}', 'LATE')" class="btn btn-outline-warning d-inline-flex align-items-center justify-content-center" style="min-width: 38px; min-height: 38px;" title="Late Override">
+                                                <i class="bi bi-clock"></i>
+                                            </button>
+                                            <button type="button" onclick="executeManualMark('{{ session.id }}', '{{ att.student.id }}', 'ABSENT')" class="btn btn-outline-danger d-inline-flex align-items-center justify-content-center" style="min-width: 38px; min-height: 38px;" title="Absent Override">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted small italic">Locked</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">No students registered to this tracking cohort.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+
+{% if session.status == 'ACTIVE' %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const videoElement = document.getElementById('video-feed');
+        const overlayCanvas = document.getElementById('canvas-overlay');
+        const overlayCtx = overlayCanvas.getContext('2d');
+        const initCamButton = document.getElementById('start-webcam-btn');
+        const searchInput = document.getElementById('roster-search-field');
+        
+        let localStream = null;
+        let transmissionTimer = null;
+        let spoofCounter = 0;
+
+        // Interactive Client Search Filter Engine
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            document.querySelectorAll('.student-record-row-item').forEach(row => {
+                const name = row.querySelector('.target-name-node').textContent.toLowerCase();
+                const roll = row.querySelector('.target-roll-node').textContent.toLowerCase();
+                if(name.includes(query) || roll.includes(query)) {
+                    row.style.setProperty("display", "", "important");
+                } else {
+                    row.style.setProperty("display", "none", "important");
+                }
+            });
+        });
+
+        initCamButton.addEventListener('click', async function () {
+            if (localStream) {
+                stopProcessingLoop();
+                return;
+            }
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+                });
+                videoElement.srcObject = localStream;
+                initCamButton.className = "btn btn-outline-danger flex-grow-1 flex-md-grow-0 px-3 d-flex align-items-center justify-content-center gap-2";
+                initCamButton.innerHTML = `<i class="bi bi-camera-video-off-fill"></i> Kill Camera`;
+                document.getElementById('stream-status-badge').className = "badge bg-success border text-uppercase";
+                document.getElementById('stream-status-badge').textContent = "Live Feed";
+                document.getElementById('processing-icon').style.display = "inline-block";
+                startProcessingLoop();
+            } catch (err) {
+                alert("Camera Initialization Interrupted: " + err.message);
+            }
+        });
+
+        function startProcessingLoop() {
+            const transferCanvas = document.createElement('canvas');
+            const transferCtx = transferCanvas.getContext('2d');
+            
+            transmissionTimer = setInterval(async () => {
+                if (videoElement.paused || videoElement.ended) return;
+                
+                transferCanvas.width = videoElement.videoWidth;
+                transferCanvas.height = videoElement.videoHeight;
+                transferCtx.drawImage(videoElement, 0, 0, transferCanvas.width, transferCanvas.height);
+                
+                const base64Payload = transferCanvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+                
+                try {
+                    const response = await fetch('/attendance/api/recognize/{{ session.id }}/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({ frame: base64Payload })
+                    });
+                    const telemetry = await response.json();
+                    if (telemetry) {
+                        processLiveTelemetry(telemetry);
+                    }
+                } catch (err) {
+                    console.error("API Transmission Fault:", err);
+                }
+            }, 1000);
+        }
+
+        function stopProcessingLoop() {
+            if (transmissionTimer) clearInterval(transmissionTimer);
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
+            localStream = null;
+            videoElement.srcObject = null;
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            initCamButton.className = "btn btn-dark flex-grow-1 flex-md-grow-0 px-3 d-flex align-items-center justify-content-center gap-2";
+            initCamButton.innerHTML = `<i class="bi bi-camera-video-fill"></i> Initialize Camera`;
+            document.getElementById('stream-status-badge').className = "badge bg-outline-light border text-uppercase";
+            document.getElementById('stream-status-badge').textContent = "Offline";
+            document.getElementById('processing-icon').style.display = "none";
+        }
+
+        function processLiveTelemetry(data) {
+            // Check & Increment Liveness Violations
+            if (data.spoof_count && data.spoof_count > 0) {
+                spoofCounter += data.spoof_count;
+                document.getElementById('stat-spoofs').textContent = spoofCounter;
+                const toastAlert = document.getElementById('toast-liveness-alert');
+                toastAlert.classList.remove('d-none');
+                setTimeout(() => toastAlert.classList.add('d-none'), 2500);
+            }
+
+            // Sync Main Metrics Indicators
+            if(data.total_students) {
+                document.getElementById('stat-present').textContent = data.total_marked || 0;
+                document.getElementById('stat-absent').textContent = (data.total_students - (data.total_marked || 0));
+            }
+
+            // Repaint Runtime Detection Frames onto Overlay Canvas
+            overlayCanvas.width = videoElement.videoWidth;
+            overlayCanvas.height = videoElement.videoHeight;
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+            if (data.recognized && data.recognized.length > 0) {
+                data.recognized.forEach(match => {
+                    // Direct mutations dynamically trigger roster list updates
+                    if (match.status === "MARKED") {
+                        const targetBadge = document.getElementById(`badge-container-${match.student_id}`);
+                        if(targetBadge) {
+                            targetBadge.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small rounded">PRESENT</span>`;
+                        }
+                    }
+                });
+            }
+        }
+    });
+
+    async function executeManualMark(sessionId, studentId, statusPayload) {
+        try {
+            const res = await fetch(`/attendance/session/${sessionId}/mark/${studentId}/${statusPayload}/`, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+            });
+            if (res.ok) {
+                const targetBox = document.getElementById(`badge-container-${studentId}`);
+                if (statusPayload === 'PRESENT') {
+                    targetBox.innerHTML = `<span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 small rounded">PRESENT</span>`;
+                } else if (statusPayload === 'LATE') {
+                    targetBox.innerHTML = `<span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1 small rounded">LATE</span>`;
+                } else {
+                    targetBox.innerHTML = `<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 small rounded">ABSENT</span>`;
+                }
+                // Refresh local status layout context counter parameters instantly
+                location.reload(); 
+            }
+        } catch (err) {
+            console.error("Failed manual change submission", err);
+        }
+    }
+</script>
+{% endif %}
+
+<style>
+    /* Continuous Pulse Animation Pattern rules */
+    .animate-pulse {
+        animation: pulsingFrame 2s infinite ease-in-out;
+    }
+    @keyframes pulsingFrame {
+        0% { opacity: 0.4; }
+        50% { opacity: 1; }
+        100% { opacity: 0.4; }
+    }
+    /* Mobile-First Breakpoint Fine-Tuning rules */
+    @media (max-width: 768px) {
+        .btn-group-sm > .btn {
+            padding: 0.35rem 0.6rem !important;
+        }
+    }
+</style>
 {% endblock %}
