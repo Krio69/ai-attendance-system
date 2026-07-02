@@ -2,9 +2,9 @@
   "version": 2,
   "builds": [
     {
-      "src": "attendance_project/wsgi.py",
+      "src": "web/attendance_project/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
+      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
     }
   ],
   "routes": [
@@ -14,7 +14,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "attendance_project/wsgi.py"
+      "dest": "web/attendance_project/wsgi.py"
     }
   ]
 }
