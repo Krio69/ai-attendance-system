@@ -4,15 +4,18 @@ Optimized for local development and Vercel deployment.
 """
 
 import os
+import sys
 from pathlib import Path
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent  # repo root
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-this-in-production-xyz123")
+# Ensure /web is importable in Vercel/runtime
+if str(BASE_DIR) not in sys.path:
+    sys.path.insert(0, str(BASE_DIR))
 
-# IMPORTANT: default False for production safety
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-this-in-production-xyz123")
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = [".vercel.app", "localhost", "127.0.0.1"]
@@ -27,12 +30,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
-    # Third party
     "crispy_forms",
     "crispy_bootstrap5",
-
-    # Our apps
     "accounts",
     "academics",
     "attendance",
@@ -72,10 +71,9 @@ TEMPLATES = [
 WSGI_APPLICATION = "attendance_project.wsgi.application"
 
 # ==============================================================
-# DATABASE — Vercel/Cloud first, localhost fallback
+# DATABASE
 # ==============================================================
 DATABASE_URL = os.environ.get("DATABASE_URL")
-
 if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
@@ -100,7 +98,6 @@ else:
 # AUTH
 # ==============================================================
 AUTH_USER_MODEL = "accounts.CustomUser"
-
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/accounts/login/"
@@ -110,11 +107,10 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 # ==============================================================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
-# Keep only if this folder exists in your repo; otherwise remove
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# FIX: avoid 500 when manifest entry is missing on serverless
+STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -150,7 +146,6 @@ ANTI_SPOOF_UNCERTAIN_MARGIN = 0.15
 ANTI_SPOOF_DEBUG = False
 ANTI_SPOOF_MIN_FACE_SIZE = 96
 ANTI_SPOOF_CROP_MARGIN_RATIO = 0.12
-
 LIVENESS_THRESHOLD = 0.85
 
 # ==============================================================
@@ -160,7 +155,6 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kathmandu"
 USE_I18N = True
 USE_TZ = True
-
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ============================================================
@@ -192,7 +186,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://*.vercel.app",
 ]
 
-# Optional security hardening when DEBUG=False
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SESSION_COOKIE_SECURE = True
