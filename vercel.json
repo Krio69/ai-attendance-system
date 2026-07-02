@@ -1,14 +1,12 @@
 {
-  "version": 2,
-  "buildCommand": "cd web && python manage.py collectstatic --noinput",
-  "builds": [
+  "framework": null,
+  "outputDirectory": ".",
+  "installCommand": "pip install -r web/requirements.txt",
+  "buildCommand": "cd web && python manage.py migrate && python manage.py collectstatic --noinput",
+  "rewrites": [
     {
-      "src": "web/attendance_project/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.12" }
+      "source": "/(.*)",
+      "destination": "/web/attendance_project/wsgi.py"
     }
-  ],
-  "routes": [
-    { "src": "/(.*)", "dest": "web/attendance_project/wsgi.py" }
   ]
 }
