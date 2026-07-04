@@ -8,8 +8,13 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "web/attendance_project/wsgi.py"
     }
-  ]
+  ],
+  "buildCommand": "cd web && python manage.py collectstatic --noinput"
 }

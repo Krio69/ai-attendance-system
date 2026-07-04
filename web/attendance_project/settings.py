@@ -65,11 +65,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'attendance_project.wsgi.application'
 
 # Database Configuration
-# Fallback to local SQLite ONLY if DATABASE_URL environment variable isn't found
-DATABASE_URL = os.environ.get(
-    'DATABASE_URL',
-    'postgresql://neondb_owner:npg_iZjke7XlHUa2@ep-silent-hat-ahv8brtu-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require'
-)
+# DATABASE_URL MUST be set as an environment variable in your Vercel project settings.
+# Do NOT hardcode real credentials here — anything committed to a repo (even a
+# private one) should be treated as compromised. If you previously had real
+# credentials in this file, rotate that database password now.
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if not DATABASE_URL:
+    raise Exception(
+        "DATABASE_URL environment variable is not set. "
+        "Set it in your Vercel project's Environment Variables settings."
+    )
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -112,7 +118,14 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Storage backend setup optimized for both local dev and production servers
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
