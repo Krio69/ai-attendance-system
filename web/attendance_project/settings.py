@@ -31,6 +31,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Your local application apps go below here:
+    'accounts',
+    'academics',
+    'attendance',
+    'enrollment',
 ]
 
 MIDDLEWARE = [
